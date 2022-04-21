@@ -1,6 +1,6 @@
 # swarmDMD
 
-** Proper readme to come **
+** Proper readme and example cases to come **
 
 swarmDMD is an algorithm used for learning swarm dynamics in an entirely data-based approach, using Dynamic Mode Decomposition (DMD). 
 
