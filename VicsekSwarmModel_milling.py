@@ -14,47 +14,52 @@ from functools import partial
 import itertools as it
 from scipy.interpolate import interp1d
 
-def interp_jump_correction(X,T_start,T_stop,L,dt,dt_new,X_new_stack):
-    """corrects interpolation over periodic boundary by identifying individual agents who 
+def interp_jump_correction(X,T_start,T_stop,L,dt,dt_new,N,X_new_stack):
+	"""corrects interpolation over periodic boundary by identifying individual agents who 
     cross the boundary, and breaking up their tracjectories into two parts split at that
     crossing."""
-    X_stack = np.concatenate((X[:,T_start:T_stop+1,0],X[:,T_start:T_stop+1,1]),axis=0)
-    X_diff = np.diff(X_stack[:,:])
-    diff_locs = np.argwhere(np.abs(X_diff)>(L/2))
-    diff_locs = diff_locs[np.argsort(diff_locs[:,1]),:]
-    jump_agents = X_stack[diff_locs[:,0],:]
+	X_stack = np.concatenate((X[:,T_start:T_stop+1,0],X[:,T_start:T_stop+1,1]),axis=0)
+	# X_new_stack = np.concatenate((X_new[:,:,0],X_new[:,:,1]),axis=0)
+	X_diff = np.diff(X_stack[:,:])
+	diff_locs = np.argwhere(np.abs(X_diff)>(L/2))
+	diff_locs = diff_locs[np.argsort(diff_locs[:,1]),:]
+	jump_agents = X_stack[diff_locs[:,0],:]
 
-    for i in range(np.shape(diff_locs)[0]):
-        temp1 = jump_agents[i,:diff_locs[i,1]+1]
-        temp2 = jump_agents[i,diff_locs[i,1]+1:]
+	for i in range(np.shape(diff_locs)[0]):
+		temp1 = jump_agents[i,:diff_locs[i,1]+1]
+		temp2 = jump_agents[i,diff_locs[i,1]+1:]
 
-        if temp2[0]-temp1[-1]<0:
-            temp1 = np.concatenate((temp1,[temp2[0]+L]))
-        else:
-            temp1 = np.concatenate((temp1,[temp2[0]-L]))
+		if temp2[0]-temp1[-1]<0:
+			temp1 = np.concatenate((temp1,[temp2[0]+L]))
+		else:
+			temp1 = np.concatenate((temp1,[temp2[0]-L]))
 
-        t1 = np.arange(0,diff_locs[i,1]+2,dt)
-        t2 = np.arange(diff_locs[i,1]+1,T_stop+1-600,dt)
+		t1 = np.arange(0,diff_locs[i,1]+2,dt)
+		t2 = np.arange(diff_locs[i,1]+1,T_stop+1,dt)
 
-        t1_new = np.arange(0,diff_locs[i,1]+1,dt_new)
-        t2_new = np.arange(diff_locs[i,1]+1,T_stop-600,dt_new)
-        f1 = interp1d(t1,temp1)
-        temp1_new = f1(t1_new)
+		t1_new = np.arange(0,diff_locs[i,1]+1,dt_new)
+		t2_new = np.arange(diff_locs[i,1]+1,T_stop,dt_new)
+		f1 = interp1d(t1,temp1)
+		temp1_new = f1(t1_new)
 
-        if len(temp2) != 1:
-            f2 = interp1d(t2,temp2)
-            temp2_new = f2(t2_new)
-        else:
-            temp2_new = []
+		if len(temp2) != 1:
+			print(np.shape(temp2))
+			print(np.shape(t2))
+			f2 = interp1d(t2,temp2)
+			temp2_new = f2(t2_new)
+		else:
+			temp2_new = []
 
 
-        agent_new = np.concatenate((temp1_new,temp2_new))
-        agent = wrap_position(L,agent_new)
+		agent_new = np.concatenate((temp1_new,temp2_new))
+		agent = wrap_position(L,agent_new)
 
-        X_new_stack[diff_locs[i,0],:] = agent
+		print(np.shape(X_new_stack))
+		print(N)
+		X_new_stack[diff_locs[i,0],:] = agent
 
-    X_new = np.stack((X_new_stack[:N,:],X_new_stack[N:,:]),axis=2)
-    return X_new
+	X_new = np.stack((X_new_stack[:N,:],X_new_stack[N:,:]),axis=2)
+	return X_new
 
 def wrap_position(L,agent):
     boundaryT_index = np.where(agent>L)
@@ -226,12 +231,31 @@ def get_gif(N,eta_name,wide,rho,r_name,L,X,TN,dynamicstype,dt):
 	traj_ani.save('Results/SwarmModel/'+gif_name+'.mp4', writer=FFwriter)
 	# traj_ani.save('Results/SwarmModel/'+gif_name, writer='pillow')
 
-def par_func(x0,theta0,N,dt,TN,rho,v,omega_max,phi,L,wide,dynamicstype,L0,downsample_milling,N_milling,data_input):
+def par_func(x0,theta0,N,dt,TN,rho,v,omega_max,phi,L,wide,dynamicstype,L0,downsample_milling,sample_freq,dt_new,data_input):
 	eta = data_input[0]
 	r = data_input[1]
 
 	# try:
 	X,Theta = make_swarm(x0,theta0,N,dt,TN,eta,rho,v,omega_max,phi,r,L,dynamicstype)
+	print('swarm created.')
+	if downsample_milling:
+		print('downsampling started')
+		agent_indices = range(0,np.shape(X)[0],sample_freq)
+		X = X[agent_indices,:,:]
+		N = len(agent_indices)
+		t = np.arange(0,TN,dt)
+		t_new = np.arange(0,TN-1,dt_new)
+		print(np.shape(t))
+		print(np.shape(X))
+		f = interp1d(t,X,axis=1)
+		X_new = f(t_new)
+		X_new_stack = np.concatenate((X_new[:,:,0],X_new[:,:,1]),axis=0)
+		X = interp_jump_correction(X,0,TN-1,L,dt,dt_new,N,X_new_stack)
+		dt = dt_new
+		print('downsampling finished')
+
+		
+
 	# except Exception as e: print(e)
 	r_name = str(r).replace('.','')
 	eta_name = str(eta).replace('.','')
@@ -258,8 +282,9 @@ if __name__ == '__main__':
 
 	# Simulation settings and names
 	dynamicstype = 'milling' # options: standard, milling
-	downsample_milling = 1 # choose to reduce the number of agents in the milling sim before saving
-	N_milling = 200 # new number of milling agents
+	downsample_milling = 1 # choose to reduce the number of agents and change the time step in the milling sim before saving
+	sample_freq = 5 # keep every n'th agent
+	dt_new = 0.1
 				
 	wide = 0 # to make domain wider than initial condition
 	if wide:
@@ -295,7 +320,7 @@ if __name__ == '__main__':
 		
 	theta0 = 2*np.pi*(np.random.rand(N,1)-0.5) # intialize agent directions as: theta in [-pi,pi]
 							
-	func = partial(par_func,x0,theta0,N,dt,TN,rho,v,omega_max,phi,L,wide,dynamicstype,L0,downsample_milling,N_milling)
+	func = partial(par_func,x0,theta0,N,dt,TN,rho,v,omega_max,phi,L,wide,dynamicstype,L0,downsample_milling,sample_freq,dt_new)
 	for i in range(len(parameters)):
 		print(parameters[i])
 		func(parameters[i])
