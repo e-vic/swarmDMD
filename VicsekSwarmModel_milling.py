@@ -1,6 +1,6 @@
-## Vicsek Swarm Model
+## Vicsek Swarm Model - Milling
 ## Emma Hansen
-## Updated: June 2020
+## Updated: April 2022
 
 # Load Libraries
 import numpy as np
@@ -14,53 +14,6 @@ from functools import partial
 import itertools as it
 from scipy.interpolate import interp1d
 
-def interp_jump_correction(X,T_start,T_stop,L,dt,dt_new,N,X_new_stack):
-	"""corrects interpolation over periodic boundary by identifying individual agents who 
-    cross the boundary, and breaking up their tracjectories into two parts split at that
-    crossing."""
-	X_stack = np.concatenate((X[:,T_start:T_stop+1,0],X[:,T_start:T_stop+1,1]),axis=0)
-	# X_new_stack = np.concatenate((X_new[:,:,0],X_new[:,:,1]),axis=0)
-	X_diff = np.diff(X_stack[:,:])
-	diff_locs = np.argwhere(np.abs(X_diff)>(L/2))
-	diff_locs = diff_locs[np.argsort(diff_locs[:,1]),:]
-	jump_agents = X_stack[diff_locs[:,0],:]
-
-	for i in range(np.shape(diff_locs)[0]):
-		temp1 = jump_agents[i,:diff_locs[i,1]+1]
-		temp2 = jump_agents[i,diff_locs[i,1]+1:]
-
-		if temp2[0]-temp1[-1]<0:
-			temp1 = np.concatenate((temp1,[temp2[0]+L]))
-		else:
-			temp1 = np.concatenate((temp1,[temp2[0]-L]))
-
-		t1 = np.arange(0,diff_locs[i,1]+2,dt)
-		t2 = np.arange(diff_locs[i,1]+1,T_stop+1,dt)
-
-		t1_new = np.arange(0,diff_locs[i,1]+1,dt_new)
-		t2_new = np.arange(diff_locs[i,1]+1,T_stop,dt_new)
-		f1 = interp1d(t1,temp1)
-		temp1_new = f1(t1_new)
-
-		if len(temp2) != 1:
-			print(np.shape(temp2))
-			print(np.shape(t2))
-			f2 = interp1d(t2,temp2)
-			temp2_new = f2(t2_new)
-		else:
-			temp2_new = []
-
-
-		agent_new = np.concatenate((temp1_new,temp2_new))
-		agent = wrap_position(L,agent_new)
-
-		print(np.shape(X_new_stack))
-		print(N)
-		X_new_stack[diff_locs[i,0],:] = agent
-
-	X_new = np.stack((X_new_stack[:N,:],X_new_stack[N:,:]),axis=2)
-	return X_new
-
 def wrap_position(L,agent):
     boundaryT_index = np.where(agent>L)
     boundaryB_index = np.where(agent<0)
@@ -72,12 +25,7 @@ def wrap_position(L,agent):
 
 def getDifference(b1, b2):
 	"""code from https://rosettacode.org/wiki/Angle_difference_between_two_bearings#Python"""
-	try:
-		r = (b2 - b1) % (2*np.pi)
-	except Exception as e: 
-		print('b1: '+str(b1))
-		print('b2: '+str(b2))
-		print(e)
+	r = (b2 - b1) % (2*np.pi)
 	r[r >= np.pi] -= 2*np.pi
 	return r
 
@@ -127,30 +75,11 @@ def make_swarm(x0,theta0,N,dt,TN,eta,rho,v,omega_max,phi,r,L,dynamicstype):
 				p_diff = x1 - x1[i]
 				rel_angle = np.abs(getDifference(np.arctan2(p_diff[:,1],p_diff[:,0]),theta1[i]))
 				rel_angle[i] = 0.
-				# rel_angle = getDifference(theta1,theta1[i])
 				ind_theta = np.where(rel_angle<=(phi/2))
 				index_theta = np.intersect1d(index,ind_theta)
 
-				# print('rel_angle is: '+str(rel_angle))
-				# print('ind_theta is: '+str(ind_theta))
-				# if i == 3:
-				# 	quit()
-
 				theta_avg = np.arctan2(np.mean(np.sin(theta1[index_theta])),np.mean(np.cos(theta1[index_theta])))
 				theta_diff = getDifference(theta1[i],theta_avg)
-
-				try:
-					np.abs(theta_diff) < omega_max*dt
-				except:
-					print('theta_diff is: '+str(theta_diff))
-					print('i,k='+str(i)+','+str(k))
-
-				try:
-					theta_diff >= omega_max*dt
-				except: 
-					print('theta_diff is: '+str(theta_diff))
-					print('i,k='+str(i)+','+str(k))
-					break
 
 				if np.abs(theta_diff) < omega_max*dt:
 					theta2[i] = theta_avg + dtheta
@@ -226,7 +155,7 @@ def get_gif(N,eta_name,wide,rho,r_name,L,X,TN,dynamicstype,dt):
 	traj_ani = animation.FuncAnimation(fig, update_trajectory, frames=t_max, fargs=(X, lines, lines2, text, dt,t_min), interval=dt,
 									   repeat=False, blit=False) # only print frames from t_min to t_max
 
-	gif_name = 'vicsek_'+dynamicstype+'_N'+str(N)+'_eta'+eta_name+'_W'+str(wide)+'_rho'+str(rho)+'_r'+r_name+'.gif'
+	gif_name = 'vicsek_'+dynamicstype+'_N'+str(N)+'_eta'+eta_name+'_W'+str(wide)+'_rho'+str(rho)+'_r'+r_name
 	FFwriter = animation.FFMpegWriter(fps=30)
 	traj_ani.save('Results/SwarmModel/'+gif_name+'.mp4', writer=FFwriter)
 	# traj_ani.save('Results/SwarmModel/'+gif_name, writer='pillow')
@@ -245,16 +174,25 @@ def par_func(x0,theta0,N,dt,TN,rho,v,omega_max,phi,L,wide,dynamicstype,L0,downsa
 		N = len(agent_indices)
 		t = np.arange(0,TN,dt)
 		t_new = np.arange(0,TN-1,dt_new)
-		print(np.shape(t))
-		print(np.shape(X))
-		f = interp1d(t,X,axis=1)
-		X_new = f(t_new)
-		X_new_stack = np.concatenate((X_new[:,:,0],X_new[:,:,1]),axis=0)
-		X = interp_jump_correction(X,0,TN-1,L,dt,dt_new,N,X_new_stack)
+
+		X_stack = np.concatenate((X[:,:,0],X[:,:,1]),axis=0)
+		for ts in range(1,TN):
+			# at each time steps adjusts agents' positions (if necessary) to behave as if in a properly continuous domain and not finite one with periodic boundary condition
+			X_diff = X_stack[:,ts]-X_stack[:,ts-1]
+			diff_locs = np.argwhere(np.abs(X_diff)>(L/2))
+			for i in diff_locs[:,0]:
+				if X_diff[i] < 0 :
+					X_stack[i,ts:] = X_stack[i,ts:] + L
+				else:
+					X_stack[i,ts:] = X_stack[i,ts:] - L
+
+		f = interp1d(t,X_stack,axis=1)
+		X_stack_new = f(t_new)
+		X_stack_new = wrap_position(L,X_stack_new) 
+		X = np.stack((X_stack_new[:N,:],X_stack_new[N:,:]),axis=2) 
 		dt = dt_new
 		print('downsampling finished')
 
-		
 
 	# except Exception as e: print(e)
 	r_name = str(r).replace('.','')
@@ -322,5 +260,4 @@ if __name__ == '__main__':
 							
 	func = partial(par_func,x0,theta0,N,dt,TN,rho,v,omega_max,phi,L,wide,dynamicstype,L0,downsample_milling,sample_freq,dt_new)
 	for i in range(len(parameters)):
-		print(parameters[i])
 		func(parameters[i])
