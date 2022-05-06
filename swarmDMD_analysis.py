@@ -189,8 +189,8 @@ def main_loop(N,rho,wide,focal_range,R,method,T_init,re_init,T_pred,waterfall,mi
 
 
 		try:
-			np.savez('Data/SwarmModel/'+GT_filename,D=D,P=P,Mang=Mang,Mabs=Mabs,mean_bin=mean_bin,mean_bin_P=mean_bin_P,bin_width=bin_width,bin_freq=bin_freq,num_bins=num_bins)
-			np.savez('Data/'+method+'/'+save_filenameAnalysis,D_DMD=D_DMD,P_DMD=P_DMD,Mang_DMD=Mang_DMD,Mabs_DMD=Mabs_DMD,mean_bin_DMD=mean_bin_DMD,mean_bin_DMD_P=mean_bin_DMD_P,num_bins=num_bins,bin_freq=bin_freq,bin_width=bin_width)
+			np.savez('Data/SwarmModel/'+GT_filename,D=D,P=P,Mang=Mang,Mabs=Mabs,mean_bin=mean_bin,mean_bin_P=mean_bin_P,bin_width=bin_width,bin_freq=bin_freq,num_bins=num_bins,bins_percent=bins_percent,binsP_percent=binsP_percent,training_zero_count=j,prediction_zero_count=m)
+			np.savez('Data/'+method+'/'+save_filenameAnalysis,D_DMD=D_DMD,P_DMD=P_DMD,Mang_DMD=Mang_DMD,Mabs_DMD=Mabs_DMD,mean_bin_DMD=mean_bin_DMD,mean_bin_DMD_P=mean_bin_DMD_P,num_bins=num_bins,bin_freq=bin_freq,bin_width=bin_width,bins_DMD_percent=bins_DMD_percent,bins_DMDP_percent=bins_DMDP_percent,training_zero_count=k,prediction_zero_count=n)
 		except Exception as e:print(e)
 		print('analyses saved')
 	else:
@@ -227,7 +227,7 @@ def main_loop(N,rho,wide,focal_range,R,method,T_init,re_init,T_pred,waterfall,mi
 # Main Code
 if __name__ == '__main__':
 	milling = 1 # options: 0 (off), 1 (on)
-	gif = 1 # options: 0 (off), 1 (on)
+	gif = 0 # options: 0 (off), 1 (on)
 	method = 'simple' # available methods: simple, FO_cartesian, FO_polar
 	wide = 0 # to make domain wider than initial condition
 	width = 1.1 #  multiplier for domain width

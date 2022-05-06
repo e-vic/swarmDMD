@@ -98,17 +98,17 @@ def swarmDMD_propagate(N,rho,wide,gif,R,method,T_init,re_init,waterfall,milling,
     del K
 
     if gif and not re_init:
-        num_frames = 500 # max is TN
-        frames_start = 500 
+        num_frames = 300 # max is TN
+        frames_start = 0 
         get_gif(save_filename,N,L,X_DMD3d,TN,num_frames,frames_start,dt)
 
 
 
 if __name__ == '__main__':	
     # Simulation settings
-    milling = 1 # options: 0 (off), 1 (on)
+    milling = 0 # options: 0 (off), 1 (on)
     gif = 1 # options: 0 (off), 1 (on)
-    method = 'simple' # available methods: simple, FO_cartesian, FO_polar
+    method = 'FO_polar' # available methods: simple, FO_cartesian, FO_polar
     wide = 0 # to make domain wider than initial condition
     width = 1.1 #  multiplier for domain width
     re_init = 0 # OPTIONS  0: regular, no re-initialisation; int: re-initialise every int time steps, minimum is 2: (one time step for the initialisation, one time step for propagation)
@@ -116,8 +116,8 @@ if __name__ == '__main__':
     R = 8 # number of modes to use, integer greater than 0
 
     # Define data/methods to use
-    N = 100  # number of agents
-    rho = 2.5 # density
+    N = 10  # number of agents
+    rho = 16 # density
     
     if wide:
         L0 = np.sqrt(N/rho) # length of domain of agent initial positions
@@ -129,13 +129,13 @@ if __name__ == '__main__':
     A = L0**2
     r_av = (1/(N/A))**(1/2)
 
-    eta = [0.08726646259971647] # choose the noise in the GT model, currently accepted are 0, pi/12, 0.08726646259971647 (only for milling simulation)
+    eta = [0] # choose the noise in the GT model, currently accepted are 0, pi/12, 0.08726646259971647 (only for milling simulation)
 
     # rs = [0.2*r_av,r_av,2*r_av] #20%, 100%, and 200% of r_av
-    # rs = [r_av]
-    rs = [1.] # USE ONLY FOR MILLING
+    rs = [r_av]
+    # rs = [1.] # USE ONLY FOR MILLING
 
-    Datatypes = [13] # The possible datatypes are 1-21, but 13,20, and 21 are the ones focussed on for simple, cartesian, and polar resp. 
+    Datatypes = [21] # The possible datatypes are 1-21, but 13,20, and 21 are the ones focussed on for simple, cartesian, and polar resp. 
     T_pairs = [[0,50]]	# Choose the interval of time to learn with
     T_init = 0
     
