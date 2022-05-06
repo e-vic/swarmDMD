@@ -9,6 +9,7 @@ Test 2: Swarm model - milling
 	a) runs and saves? PASS
 	b) mp4 code modifiable to find milling section? PASS
 	c) mp4 shows milling? PASS
+	d) Downsampling and time step interpolation? PASS 
 
 Test 3: swarmDMD
 	a) runs and saves? PASS
@@ -18,7 +19,7 @@ Test 3: swarmDMD
 Test 4: swarmDMD Analysis
 	a) regular runs and saves? PASS
 	b) reinint/waterfall runs and saves? PASS
-	c) milling runs and saves?
+	c) milling runs and saves? PASS 
 
 Test 5: Verify Analysis with figures file
 	a) regular

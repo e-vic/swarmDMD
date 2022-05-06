@@ -221,7 +221,7 @@ if __name__ == '__main__':
 	# Simulation settings and names
 	dynamicstype = 'milling' # options: standard, milling
 	downsample_milling = 1 # choose to reduce the number of agents and change the time step in the milling sim before saving
-	sample_freq = 5 # keep every n'th agent
+	sample_freq = 10 # keep every n'th agent
 	dt_new = 0.1
 				
 	wide = 0 # to make domain wider than initial condition
